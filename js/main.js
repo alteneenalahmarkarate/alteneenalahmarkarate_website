@@ -178,7 +178,24 @@ document.addEventListener("keydown", (e) => {
   let ringX = -100, ringY = -100;     // ring lags behind
   let lastX = -100, lastY = -100;
   const particles = [];
+  const MAX_PARTICLES = 140;          // hard cap so fast swipes can't flood the canvas
   const COLORS = ["#e5383b", "#ff6b35", "#d4af37", "#ffd23f"];
+
+  // pre-rendered glow sprites — drawImage is far cheaper than per-particle shadowBlur
+  const SPRITE_SIZE = 32;
+  const sprites = COLORS.map((color) => {
+    const s = document.createElement("canvas");
+    s.width = s.height = SPRITE_SIZE;
+    const sc = s.getContext("2d");
+    const half = SPRITE_SIZE / 2;
+    const g = sc.createRadialGradient(half, half, 0, half, half, half);
+    g.addColorStop(0, color);
+    g.addColorStop(0.35, color);
+    g.addColorStop(1, "transparent");
+    sc.fillStyle = g;
+    sc.fillRect(0, 0, SPRITE_SIZE, SPRITE_SIZE);
+    return s;
+  });
 
   function resize() {
     canvas.width = window.innerWidth;
@@ -190,6 +207,8 @@ document.addEventListener("keydown", (e) => {
   window.addEventListener("mousemove", (e) => {
     mouseX = e.clientX;
     mouseY = e.clientY;
+    // snap the dot immediately — waiting for the next rAF adds a frame of lag
+    dot.style.transform = `translate(${mouseX}px, ${mouseY}px)`;
 
     // spawn embers proportional to pointer speed
     const speed = Math.hypot(mouseX - lastX, mouseY - lastY);
@@ -203,15 +222,18 @@ document.addEventListener("keydown", (e) => {
         size: Math.random() * 2.4 + 0.8,
         life: 1,
         decay: Math.random() * 0.025 + 0.015,
-        color: COLORS[Math.floor(Math.random() * COLORS.length)],
+        sprite: sprites[Math.floor(Math.random() * sprites.length)],
       });
     }
+    if (particles.length > MAX_PARTICLES) particles.splice(0, particles.length - MAX_PARTICLES);
     lastX = mouseX;
     lastY = mouseY;
+  }, { passive: true });
 
-    // grow the ring over anything clickable
-    const overInteractive = e.target.closest("a, button, .gallery-item, iframe");
-    ring.classList.toggle("hovering", !!overInteractive);
+  // grow the ring over anything clickable — mouseover only fires when the
+  // hovered element changes, unlike running closest() on every mousemove
+  window.addEventListener("mouseover", (e) => {
+    ring.classList.toggle("hovering", !!e.target.closest("a, button, .gallery-item, iframe"));
   });
 
   window.addEventListener("mousedown", () => ring.classList.add("pressing"));
@@ -226,8 +248,7 @@ document.addEventListener("keydown", (e) => {
   });
 
   (function loop() {
-    // dot snaps to the pointer, ring eases after it
-    dot.style.transform = `translate(${mouseX}px, ${mouseY}px)`;
+    // ring eases after the pointer (the dot is snapped in the mousemove handler)
     ringX += (mouseX - ringX) * 0.16;
     ringY += (mouseY - ringY) * 0.16;
     ring.style.transform = `translate(${ringX}px, ${ringY}px)`;
@@ -244,16 +265,12 @@ document.addEventListener("keydown", (e) => {
         particles.splice(i, 1);
         continue;
       }
+      // glow baked into the sprite; scale it to the ember's current size
+      const r = (p.size * p.life + 4) * 2;
       ctx.globalAlpha = p.life;
-      ctx.fillStyle = p.color;
-      ctx.shadowBlur = 8;
-      ctx.shadowColor = p.color;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.drawImage(p.sprite, p.x - r / 2, p.y - r / 2, r, r);
     }
     ctx.globalAlpha = 1;
-    ctx.shadowBlur = 0;
 
     requestAnimationFrame(loop);
   })();
