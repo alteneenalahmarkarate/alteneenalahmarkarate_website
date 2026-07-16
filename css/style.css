@@ -568,7 +568,7 @@ html[dir="rtl"] .chief-quote { border-radius: 12px 0 0 12px; }
 /* ─────────── Accreditations ─────────── */
 .accred-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 22px;
   margin-top: 56px;
 }
@@ -617,6 +617,7 @@ html[dir="rtl"] .chief-quote { border-radius: 12px 0 0 12px; }
 .accred-grid .accred-tile:nth-child(2) { --d: 0.1s; }
 .accred-grid .accred-tile:nth-child(3) { --d: 0.2s; }
 .accred-grid .accred-tile:nth-child(4) { --d: 0.3s; }
+.accred-grid .accred-tile:nth-child(5) { --d: 0.4s; }
 
 /* ─────────── Lineage ─────────── */
 .lineage { background: var(--bg-soft); border-block: 1px solid var(--line); }
