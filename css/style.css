@@ -605,6 +605,12 @@ html[dir="rtl"] .chief-quote { border-radius: 12px 0 0 12px; }
   height: 84%;
   object-fit: contain;
 }
+/* Sharjah Sports Council logo includes its wordmark — scale it down enough that
+   the whole square logo (corners included) fits inside the circular frame */
+.accred-logo--full img {
+  width: 66%;
+  height: 66%;
+}
 .accred-tile h3 {
   font-size: 1.05rem;
   font-weight: 700;
